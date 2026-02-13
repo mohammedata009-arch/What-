@@ -1,67 +1,137 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>مولد أرقام السودان</title>
+    <title>تطبيق محمد طه - المولد الذكي الملون</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; text-align: center; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        select, input, button { padding: 10px; margin: 10px; width: 80%; border: 1px solid #ccc; border-radius: 5px; }
-        button { background: #25D366; color: white; border: none; cursor: pointer; font-weight: bold; }
-        button:hover { background: #128C7E; }
-        textarea { width: 90%; height: 200px; margin-top: 20px; padding: 10px; border-radius: 5px; }
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; text-align: center; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 550px; margin: auto; }
+        h2 { color: #075e54; margin-bottom: 5px; }
+        .dev-name { color: #555; font-size: 14px; margin-bottom: 20px; }
+        input, select { padding: 12px; margin: 8px 0; width: 95%; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+        
+        /* تصميم الأزرار */
+        button { padding: 14px; margin: 5px 0; width: 48%; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-gen { background: #25D366; width: 100%; }
+        .btn-vcf { background: #007bff; width: 100%; }
+        .btn-excel { background: #1D6F42; }
+        .btn-copy { background: #333; }
+        .btn-invite { background: #e91e63; width: 100%; }
+
+        /* حالة الزر بعد الضغط (تم التحميل) */
+        .btn-clicked { background: #aaa !important; color: #666 !important; position: relative; }
+        .btn-clicked::after { content: " (تم)"; font-size: 10px; }
+
+        /* تصميم الجدول */
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; transition: 0.3s; }
+        th { background: #075e54; color: white; }
+        
+        /* حالة الصف عند الضغط على الرابط (تم الفحص) */
+        .row-checked { background-color: #d1e7dd !important; color: #0f5132; font-weight: bold; }
+        .row-checked td { border-color: #badbcc; }
+
+        .wa-link { color: #25D366; text-decoration: none; font-weight: bold; padding: 5px 10px; border: 1px solid #25D366; border-radius: 5px; }
+        .wa-link:visited { color: #128C7E; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>مولد أرقام هواتف سودانية 🇸🇩</h2>
-    <p>اختر الشبكة وحدد الكمية:</p>
+    <h2>مولد أرقام السودان 🇸🇩</h2>
+    <div class="dev-name">المطور: محمد طه عطا المنان</div>
     
     <select id="network">
-        <option value="+24991">زين (91)</option>
-        <option value="+24996">زين (96)</option>
+        <option value="+24991">زين السودان (91)</option>
         <option value="+24912">سوداني (12)</option>
-        <option value="+24992">أرويدو/MTN (92)</option>
+        <option value="+24992">أرويدو (92)</option>
     </select>
 
-    <input type="number" id="count" placeholder="كم عدد الأرقام؟ (مثلاً 100)" min="1">
+    <input type="text" id="contactName" placeholder="اسم جهة الاتصال">
+    <input type="number" id="count" placeholder="كم عدد الأرقام؟">
     
-    <button onclick="generateNumbers()">توليد الأرقام الآن</button>
+    <button class="btn-gen" onclick="generateNumbers(this)">1. توليد الأرقام</button>
+    
+    <div style="display: flex; justify-content: space-between;">
+        <button id="excelBtn" class="btn-excel" onclick="exportToExcel(this)">تحميل Excel</button>
+        <button class="btn-copy" onclick="copyNumbers(this)">نسخ الأرقام</button>
+    </div>
 
-    <textarea id="result" readonly placeholder="الأرقام ستظهر هنا..."></textarea>
-    <button style="background: #333;" onclick="copyNumbers()">نسخ الأرقام</button>
+    <button id="vcfBtn" class="btn-vcf" onclick="exportToVCF(this)">2. تحميل ملف (VCF)</button>
+
+    <div id="tableContainer"></div>
 </div>
 
 <script>
-    function generateNumbers() {
+    let currentNumbers = [];
+
+    // دالة لتغيير لون الزر عند الضغط
+    function markBtnClicked(btn) {
+        btn.classList.add('btn-clicked');
+    }
+
+    function generateNumbers(btn) {
         const prefix = document.getElementById('network').value;
         const count = document.getElementById('count').value;
-        const resultArea = document.getElementById('result');
-        let numbers = "";
+        const container = document.getElementById('tableContainer');
+        if (!count || count <= 0) return alert("حدد العدد");
+        
+        // إعادة ضبط الأزرار عند توليد أرقام جديدة
+        document.getElementById('excelBtn').classList.remove('btn-clicked');
+        document.getElementById('vcfBtn').classList.remove('btn-clicked');
 
-        if (!count || count <= 0) {
-            alert("الرجاء إدخال عدد صحيح");
-            return;
-        }
-
-        // توليد أرقام عشوائية تبدأ من رقم معين لضمان الواقعية
+        currentNumbers = [];
+        let html = "<table><tr><th>الرقم</th><th>الإجراء</th></tr>";
         for (let i = 0; i < count; i++) {
-            const randomSuffix = Math.floor(1000000 + Math.random() * 9000000); // 7 أرقام عشوائية
-            numbers += prefix + randomSuffix + "\n";
+            const num = prefix + Math.floor(1000000 + Math.random() * 8999999);
+            currentNumbers.push(num);
+            // أضفنا دالة markRow لإضافة لون عند النقر على الرابط
+            html += `<tr id="row-${i}">
+                        <td>${num}</td>
+                        <td><a href="https://wa.me/${num}" target="_blank" class="wa-link" onclick="markRow(${i})">فحص واتساب</a></td>
+                    </tr>`;
         }
-
-        resultArea.value = numbers;
+        container.innerHTML = html + "</table>";
     }
 
-    function copyNumbers() {
-        const resultArea = document.getElementById('result');
-        resultArea.select();
-        document.execCommand('copy');
-        alert("تم نسخ الأرقام بنجاح!");
+    // دالة تلوين الصف
+    function markRow(index) {
+        const row = document.getElementById(`row-${index}`);
+        row.classList.add('row-checked');
+    }
+
+    function exportToVCF(btn) {
+        const baseName = document.getElementById('contactName').value || "سوداني";
+        if (currentNumbers.length === 0) return alert("ولد الأرقام أولاً");
+        
+        let vcf = "";
+        currentNumbers.forEach((n, i) => {
+            vcf += `BEGIN:VCARD\nVERSION:3.0\nFN:${baseName} ${i+1}\nTEL;TYPE=CELL:${n}\nEND:VCARD\n`;
+        });
+        
+        const blob = new Blob([vcf], { type: "text/vcard" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${baseName}.vcf`;
+        a.click();
+        markBtnClicked(btn); // تلوين الزر بعد التحميل
+    }
+
+    function exportToExcel(btn) {
+        if (currentNumbers.length === 0) return;
+        const ws = XLSX.utils.json_to_sheet(currentNumbers.map(n => ({ "الرقم": n })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Numbers");
+        XLSX.writeFile(wb, "Sudan_Numbers.xlsx");
+        markBtnClicked(btn); // تلوين الزر بعد التحميل
+    }
+
+    function copyNumbers(btn) {
+        if (currentNumbers.length === 0) return;
+        navigator.clipboard.writeText(currentNumbers.join("\n"));
+        markBtnClicked(btn);
     }
 </script>
-
 </body>
 </html>
