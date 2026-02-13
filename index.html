@@ -1,1 +1,67 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>مولد أرقام السودان</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; text-align: center; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        select, input, button { padding: 10px; margin: 10px; width: 80%; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #25D366; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #128C7E; }
+        textarea { width: 90%; height: 200px; margin-top: 20px; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>مولد أرقام هواتف سودانية 🇸🇩</h2>
+    <p>اختر الشبكة وحدد الكمية:</p>
+    
+    <select id="network">
+        <option value="+24991">زين (91)</option>
+        <option value="+24996">زين (96)</option>
+        <option value="+24912">سوداني (12)</option>
+        <option value="+24992">أرويدو/MTN (92)</option>
+    </select>
+
+    <input type="number" id="count" placeholder="كم عدد الأرقام؟ (مثلاً 100)" min="1">
+    
+    <button onclick="generateNumbers()">توليد الأرقام الآن</button>
+
+    <textarea id="result" readonly placeholder="الأرقام ستظهر هنا..."></textarea>
+    <button style="background: #333;" onclick="copyNumbers()">نسخ الأرقام</button>
+</div>
+
+<script>
+    function generateNumbers() {
+        const prefix = document.getElementById('network').value;
+        const count = document.getElementById('count').value;
+        const resultArea = document.getElementById('result');
+        let numbers = "";
+
+        if (!count || count <= 0) {
+            alert("الرجاء إدخال عدد صحيح");
+            return;
+        }
+
+        // توليد أرقام عشوائية تبدأ من رقم معين لضمان الواقعية
+        for (let i = 0; i < count; i++) {
+            const randomSuffix = Math.floor(1000000 + Math.random() * 9000000); // 7 أرقام عشوائية
+            numbers += prefix + randomSuffix + "\n";
+        }
+
+        resultArea.value = numbers;
+    }
+
+    function copyNumbers() {
+        const resultArea = document.getElementById('result');
+        resultArea.select();
+        document.execCommand('copy');
+        alert("تم نسخ الأرقام بنجاح!");
+    }
+</script>
+
+</body>
+</html>
